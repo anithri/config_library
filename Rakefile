@@ -18,7 +18,7 @@ Jeweler::Tasks.new do |gem|
   gem.homepage = "http://github.com/anithri/config_library"
   gem.license = "MIT"
   gem.summary = %Q{Experimental Configuration Library}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.description = %Q{ConfigLibrary allows you to load multiple config hashes (books), and then search for keys and chains of keys in each one returning the first found.}
   gem.email = "anithri@gmail.com"
   gem.authors = ["Scott M Parrish"]
   # dependencies defined in Gemfile
