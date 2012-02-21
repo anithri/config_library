@@ -124,8 +124,99 @@ describe ConfigLibrary do
 
     it "should return true if given a key_chain with more than 1 element that exists" do
       fifo_lib.books[:first][:robin] = {first: "Dick Grayson"}
+      fifo_lib.books[:second][:sidekick] = {robin: {second: "Jason Todd", third: "Tim Drake"}}
       fifo_lib.has_key_chain?(:robin, :first).should be_true
+      fifo_lib.has_key_chain?(:sidekick, :robin, :third).should be_true
     end
   end
+
+  describe "#fetch_chain(key_chain)" do
+    it "should fetch the value at the end of the chain in the first book that has it." do
+      fifo_lib.books[:first][:robin] = {one: "Dick Grayson"}
+      fifo_lib.fetch_chain(:robin, :one).should == "Dick Grayson"
+      fifo_lib.books[:second][:sidekick] = {robin: {second: "Jason Todd", third: "Tim Drake"}}
+      fifo_lib.fetch_chain(:sidekick, :robin, :third).should == "Tim Drake"
+    end
+    it "should return nil if the key chain doesn't exist" do
+      fifo_lib.fetch_chain(:sidekick, :batgirl).should be_nil
+    end
+  end
+
+  describe "#fetch_all(key_chain)", :focus do
+    it "should fetch the value at end of the chain for every book that has it." do
+      fifo_lib.books[:first][:sidekick] = {robin: {name: "Dick Grayson"}}
+      fifo_lib.books[:second][:sidekick] = {robin: {name: "Jason Todd"}}
+      fifo_lib.all_fetch_chain(:sidekick, :robin, :name).should == ["Dick Grayson", "Jason Todd"]
+    end
+    it "should return nil if the key chain doesn't exist" do
+      fifo_lib.all_fetch_chain(:sidekick, :batgirl).should be_empty
+    end
+  end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end

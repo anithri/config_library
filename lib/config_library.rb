@@ -1,13 +1,13 @@
 class ConfigLibrary
 
-  attr_accessor :search_order, :order_strategy, :books
+  attr_accessor :search_order, :order_strategy, :books, :counter
 
   VALID_ORDER_STRATEGIES = [:lifo, :fifo, :manual].freeze
   def initialize(order_strategy,initial_books)
     unless VALID_ORDER_STRATEGIES.include?(order_strategy)
       raise ArgumentError, "order_strategy (#{order_strategy}) must be one of #{VALID_ORDER_STRATEGIES}"
     end
-
+    @counter = 0
     @books = {}
     @search_order = []
 
@@ -52,6 +52,22 @@ class ConfigLibrary
     order_arr.select{|b| @books[b].has_key?(key)}
   end
 
+                            # working code first #
+                  ####  #####  ##### # #    # # ###### ######
+                 #    # #    #   #   # ##  ## #     #  #
+                 #    # #    #   #   # # ## # #    #   #####
+                 #    # #####    #   # #    # #   #    #
+                 #    # #        #   # #    # #  #     #
+                  ####  #        #   # #    # # ###### ######
+
+
+                       #        ##   ##### ###### #####
+                       #       #  #    #   #      #    #
+                       #      #    #   #   #####  #    #
+                       #      ######   #   #      #####
+                       #      #    #   #   #      #   #
+                       ###### #    #   #   ###### #    #
+
   #TODO expand for blocks
   def fetch(key, default = nil)
     _fetch_from(@search_order, key, default)
@@ -72,11 +88,26 @@ class ConfigLibrary
 
   #TODO handle default_values
   def fetch_chain(*key_chain)
-    #_fetch_chain(@search_array, key_chain)
+    payload = _fetch_chain(@search_order, key_chain.flatten.compact).compact.first
+    return nil if payload.nil?
+    return payload[1]
   end
 
   def _fetch_chain(search_arr, key_chain)
+    #payload? Perhaps I'm over paranoid, but i wasn't sure about returning literal false values
+    #and this allowed me to skip that worry by wrapping whatever the return value is
+    search_arr.map{|b| _hash_has_key_chain?(@books[b], key_chain.dup)}
+  end
 
+  def all_fetch_chain(*key_chain)
+    payload =  _fetch_chain(@search_order, key_chain.flatten.compact).compact
+    warn "all_fetch_chain: " + payload.inspect
+    return [] if payload.empty?
+    payload.map{|p| p[1]}
+  end
+
+  def all_with_key_chain?(*key_chain)
+    _all_with_key_chain?(@search_order, key_chain.flatten.compact)
   end
 
   def has_key_chain?(*key_chain)
@@ -84,19 +115,51 @@ class ConfigLibrary
   end
 
   def _has_key_chain?(search_arr, key_chain)
-    search_arr.map{|b| _hash_has_key_chain?(@books[b], key_chain)}.any?
+    search_arr.map{|b| _hash_has_key_chain?(@books[b], key_chain.dup)}.any?
   end
 
+  def _all_with_key_chain?(search_arr, key_chain)
+    search_arr.select{|b| _hash_has_key_chain?(@books[b], key_chain.dup)}
+  end
+
+  #TODO consider rename to _deep_fetch
   def _hash_has_key_chain?(target_hash, key_chain)
     this_level = key_chain.shift
-    #return true if this_level.nil?
-    return false unless target_hash.has_key?(this_level)
-    return true unless target_hash[this_level].kind_of?(Hash)
+    return nil unless target_hash.has_key?(this_level)
+    return [:boomerang,target_hash[this_level]] if key_chain.empty?
     _hash_has_key_chain?(target_hash[this_level], key_chain)
   end
 
 
-  def _deep_fetch(*key_chain)
 
-  end
+                            # working code first #
+                  ####  #####  ##### # #    # # ###### ######
+                 #    # #    #   #   # ##  ## #     #  #
+                 #    # #    #   #   # # ## # #    #   #####
+                 #    # #####    #   # #    # #   #    #
+                 #    # #        #   # #    # #  #     #
+                  ####  #        #   # #    # # ###### ######
+
+
+                       #        ##   ##### ###### #####
+                       #       #  #    #   #      #    #
+                       #      #    #   #   #####  #    #
+                       #      ######   #   #      #####
+                       #      #    #   #   #      #   #
+                       ###### #    #   #   ###### #    #
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end
