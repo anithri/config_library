@@ -1,5 +1,6 @@
 require_relative 'config_library/base'
 require_relative 'config_library/method_chain'
+require_relative 'config_library/null_result'
 
 module ConfigLibrary
   extend self

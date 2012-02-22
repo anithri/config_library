@@ -1,6 +1,6 @@
 module ConfigLibrary
   class MethodChain
-    attr_accessor :library, :key_chain
+    attr_accessor :library, :key_chain, :key_not_found
 
     OP_LOOKUPS = {nil  => :_plain_element,
                   "!" => :_end_element,
@@ -28,7 +28,10 @@ module ConfigLibrary
       @key_chain << name
       value = library.fetch_chain(@key_chain << name)
       warn "    value= #{value.inspect}"
-      return nil if value.nil?
+      if value.nil?
+        @key_not_found = true
+        return nil
+      end
       if _keep_going?(name, op, key_chain, value)
         @key_chain << name
         return self

@@ -90,13 +90,34 @@ describe ConfigLibrary::Base do
     end
 
     it "should return the default parameter if key is not present and default argument given" do
-      fifo_lib.fetch(:batman, :bat_signal).should == :bat_signal
+      fifo_lib.fetch(:batman) { :bat_signal }.should == :bat_signal
     end
 
     it "should return the value from the first book that has the key present" do
       fifo_lib.books[:first][:robin] = "Dick Grayson"
       fifo_lib.books[:second][:robin] = "Jason Todd"
       fifo_lib.fetch(:robin).should == "Dick Grayson"
+    end
+
+    context "with symbol keys" do
+      it "should return the same value regardless of whether the key is a string or a symbol" do
+        fifo_lib.books[:first][:robin] = "Dick Grayson"
+        fifo_lib.books[:second][:robin] = "Jason Todd"
+        fifo_lib.fetch("robin").should == "Dick Grayson"
+      end
+    end
+
+    context "with string keys" do
+      it "should return the same value regardless of whether the key is a string or a symbol" do
+        fifo_lib.books[:first]["robin"] = "Dick Grayson"
+        fifo_lib.books[:second]["robin"] = "Jason Todd"
+        fifo_lib.fetch(:robin).should == "Dick Grayson"
+      end
+    end
+
+    it "should return a hash" do
+      fifo_lib.books[:first][:robin] = { name: "Dick Grayson" }
+      fifo_lib.fetch(:robin).should == { name: "Dick Grayson" }
     end
   end
 
@@ -140,16 +161,22 @@ describe ConfigLibrary::Base do
     it "should return nil if the key chain doesn't exist" do
       fifo_lib.fetch_chain(:sidekick, :batgirl).should be_nil
     end
+    it "should return the result of a default block if no key is found" do
+      fifo_lib.fetch_chain(:sidekick) { :default }.should == :default
+    end
   end
 
   describe "#fetch_all(key_chain)" do
     it "should fetch the value at end of the chain for every book that has it." do
       fifo_lib.books[:first][:sidekick] = {robin: {name: "Dick Grayson"}}
       fifo_lib.books[:second][:sidekick] = {robin: {name: "Jason Todd"}}
-      fifo_lib.all_fetch_chain(:sidekick, :robin, :name).should == ["Dick Grayson", "Jason Todd"]
+      fifo_lib.fetch_all_chain(:sidekick, :robin, :name).should == ["Dick Grayson", "Jason Todd"]
     end
     it "should return nil if the key chain doesn't exist" do
-      fifo_lib.all_fetch_chain(:sidekick, :batgirl).should be_empty
+      fifo_lib.fetch_chain(:sidekick, :batgirl).should be_nil
+    end
+    it "should return the result of a default block if no key is found" do
+      fifo_lib.fetch_chain(:sidekick, :batgirl) { :default }.should == :default
     end
   end
 

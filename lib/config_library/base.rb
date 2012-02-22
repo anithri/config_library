@@ -46,13 +46,13 @@ module ConfigLibrary
       @search_order
     end
 
-    def has_key?(key,order_arr = @search_order)
-      order_arr.map{|b| @books[b].has_key?(key)}.any?
-    end
+    #def has_key?(key,order_arr = @search_order)
+    #  order_arr.map{|b| @books[b].has_key?(key)}.any?
+    #end
 
-    def books_with_key(key, order_arr = @search_order)
-      order_arr.select{|b| @books[b].has_key?(key)}
-    end
+    #def books_with_key(key, order_arr = @search_order)
+    #  order_arr.select{|b| @books[b].has_key?(key)}
+    #end
 
                               # working code first #
                     ####  #####  ##### # #    # # ###### ######
@@ -71,47 +71,64 @@ module ConfigLibrary
                          ###### #    #   #   ###### #    #
 
     #TODO expand for blocks
-    def fetch(key, default = nil)
-      fetch_chain(key) || default
-    end
+    #def fetch(key, default = nil)
+    #  fetch_chain(key) || default
+    #end
 
-    def fetch_all(key)
-      all_fetch_chain(key)
-    end
+    #def fetch_all(key)
+    #  all_fetch_chain(key)
+    #end
 
     #TODO handle default_values
-    def fetch_chain(*key_chain)
-      payload = _fetch_chain(@search_order, key_chain.flatten.compact).compact.first
-      return nil if payload.nil?
+    def fetch_chain(*key_chain, &default)
+      payload = _fetch_chain_raw(key_chain.flatten.compact).compact.first
+      return default.respond_to?( :call ) && default.call( key_chain ) || nil if payload.nil?
       return payload[1]
     end
 
-    def _fetch_chain(search_arr, key_chain)
+    alias :fetch :fetch_chain
+
+    def _fetch_chain_raw(key_chain)
       #payload? Perhaps I'm over paranoid, but i wasn't sure about returning literal false values
       #and this allowed me to skip that worry by wrapping whatever the return value is
-      search_arr.map{|b| _hash_has_key_chain?(@books[b], key_chain.dup)}
+      @search_order.map{|b| _hash_deep_fetch(@books[b], key_chain.dup)}
     end
 
-    def all_fetch_chain(*key_chain)
-      payload =  _fetch_chain(@search_order, key_chain.flatten.compact).compact
-      return [] if payload.empty?
+    def fetch_all_chain(*key_chain, &default)
+      payload =  _fetch_chain_raw(key_chain.flatten.compact).compact
+      return default.respond_to?( :call ) && default.call( key_chain ) || [] if payload.empty?
       payload.map{|p| p[1]}
     end
 
-    def all_with_key_chain?(*key_chain)
-      @search_order.select{|b| _hash_has_key_chain?(@books[b], key_chain.flatten.compact)}
+    alias :fetch_all :fetch_all_chain
+
+    def books_with_key_chain(*key_chain)
+      @search_order.select{|b| _hash_deep_fetch(@books[b], key_chain.flatten.compact)}
     end
+
+    alias :books_with_key :books_with_key_chain
 
     def has_key_chain?(*key_chain)
-      all_with_key_chain?(key_chain).any?
+      books_with_key_chain(key_chain).any?
     end
 
+    alias :has_key? :has_key_chain?
+
     #TODO consider rename to _deep_fetch
-    def _hash_has_key_chain?(target_hash, key_chain)
+    def _hash_deep_fetch(target_hash, key_chain)
+      return nil unless target_hash.is_a?(Hash)
       this_level = key_chain.shift
-      return nil unless target_hash.has_key?(this_level)
-      return [:boomerang,target_hash[this_level]] if key_chain.empty?
-      _hash_has_key_chain?(target_hash[this_level], key_chain)
+      #TODO detect and respond to cases where hash has both string and symbol key
+      alternate_key = this_level.is_a?(Symbol) ? this_level.to_s : this_level.intern
+      return_value = _get_value(target_hash, this_level) || _get_value(target_hash, alternate_key)
+      return return_value if key_chain.empty?
+      return nil if return_value.nil?
+      _hash_deep_fetch(return_value[1], key_chain)
+    end
+
+    def _get_value(target_hash, key)
+      return nil unless target_hash.has_key?(key)
+      return [:boomerang,target_hash[key]]
     end
 
     def method_missing?(name, *args)
