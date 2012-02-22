@@ -1,0 +1,26 @@
+---
+:golden_age:
+  :batman:
+    :sidekicks:
+      :robin: Dick Grayson
+    :villains:
+      :hugo_strange: Hugo Strange
+      :joker: "?"
+      :twoface: Harvey Dent
+      :riddler: Edward E Nigma
+  :green_arrow:
+    :sidekicks:
+      :speedy: Roy Harper
+:silver_age:
+  :batman:
+    :sidekicks:
+      :bat_girl: Barbara Gordon
+    :villains:
+      :poison_ivy: Pamela Isley
+:bronze_age:
+  :batman:
+    :sidekicks:
+      :robin: Jason Todd
+      :nightwing: Dick Grayson
+    :villains:
+      :ras_al_ghoul: Ra's Al Ghul

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe ConfigLibrary do
   subject{ConfigLibrary}
-  
+
   describe "loaded namespaces" do
     specify {Module.constants.should include(:ConfigLibrary)}
     specify {subject.constants.should include(:Base)}
@@ -25,7 +25,5 @@ describe ConfigLibrary do
     specify { subject.name_parts(:$this_is_a_long_test_case).should ==
         ["$this_is_a_long_test_case", nil]}
   end
-
-
 
 end

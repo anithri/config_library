@@ -1,5 +1,4 @@
-# A sample Guardfile
-# More info at https://github.com/guard/guard#readme
+notification :libnotify, :timeout => 3, :transient => true, :append => true
 
 guard 'bundler' do
   watch('Gemfile')
@@ -10,5 +9,6 @@ guard 'rspec', :version => 2, :cli => "--tag focus" do
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$})     { |m| "spec/#{m[1]}_spec.rb" }
   watch('spec/spec_helper.rb')  { "spec" }
+  watch('spec/support') {"spec"}
 end
 

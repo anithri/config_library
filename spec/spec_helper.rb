@@ -1,5 +1,6 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+my_dir = File.dirname(__FILE__)
+$LOAD_PATH.unshift(File.join(my_dir, '..', 'lib'))
+$LOAD_PATH.unshift(my_dir)
 require 'rspec'
 require 'config_library'
 
@@ -11,3 +12,5 @@ RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
 end
+
+COMMON_BATMAN_HASH = YAML.load_file(File.join(my_dir,'support','common_batman.yaml'))
