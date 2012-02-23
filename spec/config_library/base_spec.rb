@@ -46,6 +46,26 @@ describe ConfigLibrary::Base do
     end
   end
 
+  describe "#book_to_assign_to" do
+    context "when given an invalid argument" do
+      it "should raise an argument error is given anything but a symbol" do
+        lambda{lifo_lib.book_to_assign_to=123}.should raise_error(ArgumentError,/symbol.+book name/)
+        lambda{lifo_lib.book_to_assign_to="hi"}.should raise_error(ArgumentError,/symbol.+book name/)
+      end
+      it "should raise an argument error if given a symbol that is not a key in @books" do
+        lambda{lifo_lib.book_to_assign_to=:foo_bar_baz}.should raise_error(ArgumentError,/book named.+foo_bar_baz/)
+      end
+    end
+    it "should default to the first name in the @search_order list" do
+      lifo_lib.book_to_assign_to.should == :second
+      fifo_lib.book_to_assign_to.should == :first
+    end
+    it "should return the valid value set" do
+      fifo_lib.book_to_assign_to= :second
+      fifo_lib.book_to_assign_to.should == :second
+    end
+  end
+
   describe "#add_to_order(key)" do
     it "should raise an error if given a key that's not a member of @books" do
       lambda{ lifo_lib.add_to_search_order(:test)}.should raise_error(ArgumentError, /not a valid book/)

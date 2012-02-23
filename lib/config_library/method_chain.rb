@@ -1,14 +1,18 @@
 module ConfigLibrary
   class MethodChain
-    attr_accessor :library, :key_chain, :key_not_found
+    attr_accessor :library
 
     OP_LOOKUPS = {nil  => :_plain_element,
-                  "!" => :_end_element,
+                  "!" => :_bang_element,
                   "=" => :_assign_element
     }
 
-    def _keep_going?(name, op, key_chain, value)
-      #declaring all of these for override situations
+    def _key_chain
+      @key_chain
+    end
+
+    #declaring all of these for override situations
+    def _plain_keep_going?(name, op, key_chain, value)
       value.is_a?(Hash)
     end
 
@@ -17,37 +21,39 @@ module ConfigLibrary
       @key_chain = key_chain
     end
 
-    def method_missing(name_sym, *args)
+    def method_missing(name_sym, *args, &block)
+      #warn "enter mm: #{@key_chain}"
       name, op = ConfigLibrary.name_parts(name_sym)
-      warn "\nMM: #{name} -> #{op || 'nil'} -> (${args})?"
-      self.send(OP_LOOKUPS[op], name, op, args) || super
+      @key_chain << name
+      #warn "\nMM: #{name} -> #{op || 'nil'} -> (#{args})?"
+      self.send(OP_LOOKUPS[op], name, op, args, block)
     end
 
-    def _plain_element(name, op, *args)
-      warn "  PE: #{name} -> #{op} -> (#{args})?"
-      @key_chain << name
-      value = library.fetch_chain(@key_chain << name)
-      warn "    value= #{value.inspect}"
+    def _plain_element(name, op, args, block)
+      #warn "  PE: #{name} -> #{op} -> (#{args})?"
+      value = library.fetch_chain(@key_chain)
+      #warn "    chain #{@key_chain.inspect} => #{value.inspect}"
       if value.nil?
-        @key_not_found = true
-        return nil
+        return ConfigLibrary::NullResult.new("ok for .#{@key_chain[0..-2].join('.')}, nil on .#{@key_chain[-1]},")
       end
-      if _keep_going?(name, op, key_chain, value)
-        @key_chain << name
+      if _plain_keep_going?(name, op, @key_chain, value)
         return self
       else
         return value
       end
     end
 
-    def _end_element(name, op, *args)
-      warn "Side Effect END"
-
+    def _bang_element(name, op, args, block)
+      value = library.fetch_chain(@key_chain)
+      if value.nil?
+        return ConfigLibrary::NullResult.new("ok for .#{@key_chain[0..-2].join('.')}, nil on .#{@key_chain[-1]},")
+      else
+        return value
+      end
     end
 
-    def _assign_element(name, op, *args)
-      warn "Side Effect ASSIGN"
-
+    def _assign_element(name, op, args, block)
+      @library._deep_assign(@key_chain, args)
     end
 
 

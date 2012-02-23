@@ -1,7 +1,7 @@
 module ConfigLibrary
   class Base
 
-    attr_accessor :search_order, :order_strategy, :books, :counter
+    attr_accessor :search_order, :order_strategy, :books, :counter, :book_to_assign_to, :ok_to_assign, :new_book_strategy
 
     VALID_ORDER_STRATEGIES = [:lifo, :fifo, :manual].freeze
 
@@ -9,10 +9,11 @@ module ConfigLibrary
       unless VALID_ORDER_STRATEGIES.include?(order_strategy)
         raise ArgumentError, "order_strategy (#{order_strategy}) must be one of #{VALID_ORDER_STRATEGIES}"
       end
+      @new_book_strategy = lambda{{}}
       @counter = 0
-      @books = {}
+      @books = @new_book_strategy.call
       @search_order = []
-
+      @ok_to_assign = true
       @order_strategy = order_strategy
       if initial_books.kind_of?(Hash)
         initial_books.each do |k,v|
@@ -26,11 +27,39 @@ module ConfigLibrary
       end
     end
 
-    def add_book(name, book = {})
+    def book_to_assign_to
+      @book_to_assign_to ||= @search_order.first
+    end
+
+    def book_to_assign_to=(value)
+      raise ArgumentError, "Must pass a symbol for a book name" unless value.is_a? Symbol
+      raise ArgumentError, "No book named '#{value.inspect}" unless @books.has_key?(value)
+      @book_to_assign_to = value
+    end
+
+    def add_book(name, book = @new_book_strategy.call)
       raise ArgumentError, "#{name} must respond to #intern" unless k.respond_to?(:intern)
       raise ArgumentError, "#{book} must be a kind of hash." unless v.kind_of?(Hash)
 
       @books[name.intern] = book
+    end
+
+    def assign_to(keychain, values)
+      raise StandardError, "not allowed to assign values." unless @ok_to_assign
+      current_hash = @books[@book_to_assign_to]
+      raise StandardError, "no hash for #{@book_to_assign_to}" unless current_hash.is_a?(Hash)
+      used_keys = []
+      key_chain.each do |key|
+        used_keys << key
+        if used_keys == key_chain
+        if current_hash.has_key?(key) && current_hash[key].is_a?(Hash)
+          current_hash = current_hash[key]
+        elsif current_hash.has_key?(key)
+          raise ArgumentError, "key[#{key}] at end of chain[.#{used_keys.join('.')}] cannot be assigned a new element."
+        end
+
+      end
+      end
     end
 
     def add_to_search_order(key)

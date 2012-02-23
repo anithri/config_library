@@ -1,9 +1,12 @@
-= config_library
+= ConfigLibray
+
+This Gem provides a mechanism to search multiple hashes(or hash like objects) to find a value from either the first
+hash in the search order or
 
 Description goes here.
 
 == Contributing to config_library
- 
+
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
 * Fork the project.
