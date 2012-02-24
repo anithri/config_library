@@ -3,8 +3,8 @@ require "spec_helper"
 describe ConfigLibrary::MethodChain do
   subject{ConfigLibrary::MethodChain}
   let(:simple_chain) {subject.new("simple", :batman )}
-  let(:simple_library) {ConfigLibrary::Base.new(:lifo,COMMON_BATMAN_HASH)}
-  let(:batman_chain) {subject.new(ConfigLibrary::Base.new(:lifo,COMMON_BATMAN_HASH))}
+  let(:simple_library) {ConfigLibrary::Base.new(COMMON_BATMAN_HASH)}
+  let(:batman_chain) {subject.new(ConfigLibrary::Base.new(COMMON_BATMAN_HASH))}
 
   describe "#initialize" do
     it "it should set library and key_chain variables" do
@@ -19,8 +19,8 @@ describe ConfigLibrary::MethodChain do
     it "should have a key for evey character in ConfigLibrary::ALLOWED_KEY_ENDINGS plus nil" do
       ConfigLibrary::ALLOWED_KEY_ENDINGS.split("").each do |op|
         subject::OP_LOOKUPS.should include(op)
+        subject::OP_LOOKUPS.should have_key(nil)
       end
-      subject::OP_LOOKUPS.should have_key(nil)
     end
 
     it "should have a method for every value in OP_LOOKUPS" do

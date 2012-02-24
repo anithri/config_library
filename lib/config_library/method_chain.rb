@@ -56,7 +56,6 @@ module ConfigLibrary
       @library._deep_assign(@key_chain, args)
     end
 
-
                 # working code first #
       ####  #####  ##### # #    # # ###### ######
      #    # #    #   #   # ##  ## #     #  #

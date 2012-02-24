@@ -1,6 +1,9 @@
 my_dir = File.dirname(__FILE__)
 $LOAD_PATH.unshift(File.join(my_dir, '..', 'lib'))
 $LOAD_PATH.unshift(my_dir)
+require 'simplecov'
+SimpleCov.start
+
 require 'rspec'
 require 'config_library'
 

@@ -1,34 +1,31 @@
 module ConfigLibrary
   class Base
 
-    attr_accessor :search_order, :order_strategy, :books, :counter, :book_to_assign_to, :ok_to_assign, :new_book_strategy
+    attr_reader :settings, :books, :search_order, :book_to_assign_to
 
-    VALID_ORDER_STRATEGIES = [:lifo, :fifo, :manual].freeze
-
-    def initialize(order_strategy,initial_books)
-      unless VALID_ORDER_STRATEGIES.include?(order_strategy)
-        raise ArgumentError, "order_strategy (#{order_strategy}) must be one of #{VALID_ORDER_STRATEGIES}"
+    def initialize(initial_books, opts = ConfigLibrary::Settings.new())
+      unless opts.kind_of?(ConfigLibrary::Settings)
+        @book_to_assign_to = opts.delete(:book_to_assign_to)
+        opts = ConfigLibrary::Settings.new(opts)
       end
-      @new_book_strategy = lambda{{}}
-      @counter = 0
-      @books = @new_book_strategy.call
+      @settings = opts
+      @books = _generate_new_book
       @search_order = []
-      @ok_to_assign = true
-      @order_strategy = order_strategy
       if initial_books.kind_of?(Hash)
         initial_books.each do |k,v|
-          raise ArgumentError, "#{k} must respond to #intern" unless k.respond_to?(:intern)
-          raise ArgumentError, "#{k} has value that is not a kind of hash." unless v.kind_of?(Hash)
-          @books[k.intern] = v
-          add_to_search_order(k.intern)
+          add_book(k,v)
         end
       else
         raise ArgumentError, "not a kind of hash: #{initial_books}'"
       end
     end
 
+    def _generate_new_book
+      @settings.new_book_strategy.call
+    end
+
     def book_to_assign_to
-      @book_to_assign_to ||= @search_order.first
+      @book_to_assign_to ||= @settings.assign_to_book_strategy.call(@search_order)
     end
 
     def book_to_assign_to=(value)
@@ -37,51 +34,34 @@ module ConfigLibrary
       @book_to_assign_to = value
     end
 
-    def add_book(name, book = @new_book_strategy.call)
-      raise ArgumentError, "#{name} must respond to #intern" unless k.respond_to?(:intern)
-      raise ArgumentError, "#{book} must be a kind of hash." unless v.kind_of?(Hash)
+    def add_book(name, book = @settings.new_book_strategy.call)
+      raise ArgumentError, "#{name} must respond to #intern" unless name.respond_to?(:intern)
+      raise ArgumentError, "#{book} must be a kind of hash." unless book.kind_of?(Hash)
 
       @books[name.intern] = book
+      add_to_search_order(name.intern)
     end
 
-    def assign_to(keychain, values)
-      raise StandardError, "not allowed to assign values." unless @ok_to_assign
-      current_hash = @books[@book_to_assign_to]
-      raise StandardError, "no hash for #{@book_to_assign_to}" unless current_hash.is_a?(Hash)
+    def assign_to(*key_chain, values)
+      raise StandardError, "not allowed to assign values." unless @settings.assign_ok?
+      current_hash = books[book_to_assign_to]
+      raise StandardError, "no hash for #{book_to_assign_to}" unless current_hash.is_a?(Hash)
       used_keys = []
       key_chain.each do |key|
         used_keys << key
-        if used_keys == key_chain
         if current_hash.has_key?(key) && current_hash[key].is_a?(Hash)
           current_hash = current_hash[key]
         elsif current_hash.has_key?(key)
           raise ArgumentError, "key[#{key}] at end of chain[.#{used_keys.join('.')}] cannot be assigned a new element."
         end
-
-      end
       end
     end
 
     def add_to_search_order(key)
       raise ArgumentError, "#{key} not a valid book" unless @books.has_key?(key)
-      case @order_strategy
-      when :lifo
-        @search_order.unshift(key)
-      when :fifo
-        @search_order.push(key)
-      else
-        #noop
-      end
+      settings.search_order_strategy.call(@search_order, key)
       @search_order
     end
-
-    #def has_key?(key,order_arr = @search_order)
-    #  order_arr.map{|b| @books[b].has_key?(key)}.any?
-    #end
-
-    #def books_with_key(key, order_arr = @search_order)
-    #  order_arr.select{|b| @books[b].has_key?(key)}
-    #end
 
                               # working code first #
                     ####  #####  ##### # #    # # ###### ######
@@ -98,15 +78,6 @@ module ConfigLibrary
                          #      ######   #   #      #####
                          #      #    #   #   #      #   #
                          ###### #    #   #   ###### #    #
-
-    #TODO expand for blocks
-    #def fetch(key, default = nil)
-    #  fetch_chain(key) || default
-    #end
-
-    #def fetch_all(key)
-    #  all_fetch_chain(key)
-    #end
 
     #TODO handle default_values
     def fetch_chain(*key_chain, &default)
@@ -158,16 +129,6 @@ module ConfigLibrary
     def _get_value(target_hash, key)
       return nil unless target_hash.has_key?(key)
       return [:boomerang,target_hash[key]]
-    end
-
-    def method_missing?(name, *args)
-      if op.nil?
-        #TODO Lookup
-      elsif op == "!"
-        #TODO forced return
-      elsif op == "="
-        #TODO Assignment
-      end
     end
 
     def config

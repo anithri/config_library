@@ -60,6 +60,7 @@ GEM
     method_locator (0.0.4)
     method_source (0.7.0)
     methodfinder (1.2.5)
+    multi_json (1.1.0)
     ori (0.1.0)
     paint (0.8.4)
     rake (0.9.2.2)
@@ -76,6 +77,10 @@ GEM
     rspec-mocks (2.8.0)
     ruby-progressbar (0.0.10)
     ruby_gntp (0.3.4)
+    simplecov (0.6.1)
+      multi_json (~> 1.0)
+      simplecov-html (~> 0.5.3)
+    simplecov-html (0.5.3)
     sketches (0.1.1)
     spoon (0.0.1)
     thor (0.14.6)
@@ -97,3 +102,4 @@ DEPENDENCIES
   libnotify
   rdoc
   rspec
+  simplecov

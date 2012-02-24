@@ -16,4 +16,5 @@ group :development do
   gem 'irbtools'
   gem 'libnotify'
   gem 'fuubar'
+  gem 'simplecov', require: false
 end

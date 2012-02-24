@@ -7,6 +7,8 @@ describe ConfigLibrary do
     specify {Module.constants.should include(:ConfigLibrary)}
     specify {subject.constants.should include(:Base)}
     specify {subject.constants.should include(:MethodChain)}
+    specify {subject.constants.should include(:Settings)}
+    specify {subject.constants.should include(:SearchOrderStrategies)}
   end
 
   describe "#name_parts(sym)" do

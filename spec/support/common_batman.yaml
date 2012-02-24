@@ -1,6 +1,7 @@
 ---
 :golden_age:
   :batman:
+    :name: Bruce Wayne
     :sidekicks:
       :robin: Dick Grayson
     :villains:

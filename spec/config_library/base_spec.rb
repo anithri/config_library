@@ -3,46 +3,53 @@ require 'spec_helper'
 describe ConfigLibrary::Base do
   subject{ConfigLibrary::Base}
   let(:lifo_lib) {
-    lib = subject.new(:lifo, first:{},second: {} )
+    lib = subject.new(first:{},second: {})
     lib.books[:new] = {}
     lib
   }
   let(:fifo_lib) {
-    lib = subject.new(:fifo, first:{},second: {})
+    lib = subject.new({first:{},second: {}}, search_order_strategy: :fifo)
     lib.books[:new] = {}
     lib
   }
   let(:manual_lib) {
-    lib = subject.new(:manual, first:{},second: {})
+    lib = subject.new({first:{},second: {}},search_order_strategy: :manual)
     lib.books[:new] = {}
     lib
   }
 
   describe "#initialize(order_strategy, initial_books)" do
     describe "should raise an ArgumentError when giving improper arguments" do
-      specify {lambda{subject.new(:lifo, {})}.should_not raise_error(ArgumentError, /order_strategy/)}
-      specify {lambda{subject.new(:fifo, {})}.should_not raise_error(ArgumentError, /order_strategy/)}
-      specify {lambda{subject.new(:manual, {})}.should_not raise_error(ArgumentError, /order_strategy/)}
-      specify {lambda{subject.new(:test, {})}.should raise_error(ArgumentError, /order_strategy/)}
-      specify {lambda{subject.new(nil, {})}.should raise_error(ArgumentError, /order_strategy/)}
+      specify {lambda{subject.new({}, search_order_strategy: :lifo)}.should_not raise_error(ArgumentError, /order_strategy/)}
+      specify {lambda{subject.new({}, search_order_strategy: :fifo)}.should_not raise_error(ArgumentError, /order_strategy/)}
+      specify {lambda{subject.new({}, search_order_strategy: :manual)}.should_not raise_error(ArgumentError, /order_strategy/)}
+      specify {lambda{subject.new({}, search_order_strategy: :riddle)}.should raise_error(ArgumentError, /riddle/)}
 
-      specify {lambda{subject.new(:lifo, [])}.should raise_error(ArgumentError, /not a kind of hash/)}
-      specify {lambda{subject.new(:lifo, :hash)}.should raise_error(ArgumentError, /not a kind of hash/)}
-      specify {lambda{subject.new(:lifo, "hi")}.should raise_error(ArgumentError, /not a kind of hash/)}
-      specify {lambda{subject.new(:lifo, String => {})}.should raise_error(ArgumentError, /respond to #intern/)}
-      specify {lambda{subject.new(:lifo, :default=> [])}.should raise_error(ArgumentError, /not a kind of hash/)}
+      specify {lambda{subject.new([])}.should raise_error(ArgumentError, /not a kind of hash/)}
+      specify {lambda{subject.new(:hash)}.should raise_error(ArgumentError, /not a kind of hash/)}
+      specify {lambda{subject.new("hi")}.should raise_error(ArgumentError, /not a kind of hash/)}
+      specify {lambda{subject.new(String => {})}.should raise_error(ArgumentError, /respond to #intern/)}
+      specify {lambda{subject.new(:default=> [])}.should raise_error(ArgumentError, /must be a kind of hash/)}
     end
 
     it "should initialize properly if given correct arguments" do
-      lib = subject.new(:lifo, default:{})
+      lib = subject.new(default:{})
       lib.search_order.should == [:default]
-      lib.order_strategy.should == :lifo
+      lib.settings.instance_variable_get(:@search_order_strategy).should == :lifo
       lib.books.should == {default: {}}
     end
 
     it "should symbolize keys in the new_books hash" do
-      lib = subject.new(:lifo, "default" => {})
+      lib = subject.new("default" => {})
       lib.search_order.should == [:default]
+    end
+  end
+
+  describe "#new_book_strategy" do
+    it "should create new books with the given strategy." do
+      lifo_lib.settings.new_book_strategy = lambda{{foo: :bar}}
+      lifo_lib.add_book(:baz)
+      lifo_lib.books[:baz].should == {foo: :bar}
     end
   end
 
@@ -203,4 +210,35 @@ describe ConfigLibrary::Base do
   describe "#config" do
     specify { fifo_lib.config.should be_a ConfigLibrary::MethodChain }
   end
+
+  describe "#assign_to(keychain,value)", :focus do
+    let(:batman_lib) {subject.new(COMMON_BATMAN_HASH)}
+    context "when @create_ok is false" do
+      it "should raise an Error when attempting to assign anything" do
+        batman_lib.settings.assign_ok = false
+        lambda{ batman_lib.assign_to(:foo, :bar, :baz)}.should raise_error StandardError, /not allowed to assign/
+        lambda{ batman_lib.assign_to(:batman, "Dick Grayson")}.should raise_error StandardError, /not allowed to assign/
+
+      end
+    end
+    context "when @create_ok is true" do
+      it "should raise NoMethodError when attempting to assign to a value that is not a hash." do
+        lambda{ batman_lib.assign_to(:batman,:name, :first, "Bruce" )}.should raise_error NoMethodError, /asdf/
+
+      end
+
+      it "should assign a value to an existing hash"
+
+      it "should replace a value with an existing key"
+
+      context "when @create_deep is false" do
+        it "should raise an ArgumentError when trying to assign a key into a non existent hash"
+      end
+
+      context "when @create_deep is true" do
+        it "should create hashes as needed, and assign the value to the deepest one"
+      end
+    end
+  end
+
 end
