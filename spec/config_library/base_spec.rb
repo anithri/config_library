@@ -249,11 +249,12 @@ describe ConfigLibrary::Base do
         end
       end
 
-      it "should deep assign a values", :focus do
+      it "should deep assign a values" do
         batman_lib.assign_to(:superman, :sidekicks, :krypto, "A Dog")
-        warn "==>" + batman_lib.books.inspect
         batman_lib.books[:bronze_age][:superman][:sidekicks][:krypto].should == "A Dog"
 
+        batman_lib.assign_to(:flash, :villains, :rogues, :captain_boomerang, "George Harkness")
+        batman_lib.books[:bronze_age][:flash][:villains][:rogues][:captain_boomerang].should == "George Harkness"
       end
     end
   end
