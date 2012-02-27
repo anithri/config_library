@@ -234,24 +234,31 @@ describe ConfigLibrary::Base do
             batman_lib.settings.assign_over_hash = false
             lambda{ batman_lib.assign_to(:batman, :sidekicks, "none")}.should raise_error(assignment_error, /not allowed to replace existing hash/)
           end
-          it "should assign a value to an existing hash"
+          it "should assign a value to an existing hash" do
+            batman_lib.assign_to(:batman, :name, "Dick Grayson")
+            batman_lib.books[:bronze_age][:batman][:name].should == "Dick Grayson"
+
+          end
         end
         context "when @assign_over_hash is true" do
-          it "should replace an existing hash with a new value"
+          it "should replace an existing hash with a new value" do
+            batman_lib.settings.assign_over_hash = true
+            batman_lib.assign_to(:batman, :sidekicks, "none")
+            batman_lib.books[:bronze_age][:batman][:sidekicks].should == "none"
+          end
         end
       end
 
-      context "when @create_deep is false" do
-        it "should raise an AssignmentError if parts of the key_chain do not exist"
-      end
+      it "should deep assign a values", :focus do
+        batman_lib.assign_to(:superman, :sidekicks, :krypto, "A Dog")
+        warn "==>" + batman_lib.books.inspect
+        batman_lib.books[:bronze_age][:superman][:sidekicks][:krypto].should == "A Dog"
 
-      context "when @create_deep is true" do
-        it "should create hashes as needed, and assign the value to the deepest one"
       end
     end
   end
 
-  describe "#_hash_for_chain(target_hash, keys_to_find, used_keys = [])", :focus do
+  describe "#_hash_for_chain(target_hash, keys_to_find, used_keys = [])" do
     it "return the target_hash and 2 empty arrays if passed an empty keys_to_find" do
       results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [])
       results[0].should == COMMON_BATMAN_HASH
@@ -274,16 +281,15 @@ describe ConfigLibrary::Base do
     it "should return the first hash that does not have the next key" do
 
       results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :flash])
-      warn results
       results[0].should be_a(Hash)
       results[0][:batman][:name].should == "Bruce Wayne"
       results[1].should == [:flash]
       results[2].should == [:golden_age]
 
-      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :batman, :gadgets, :batmobile])
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, "batman", "gadgets", :batmobile])
       results[0].should be_a(Hash)
       results[0][:name].should == "Bruce Wayne"
-      results[1].should == [:gadgets, :batmobile]
+      results[1].should == ["gadgets", :batmobile]
       results[2].should == [:golden_age, :batman]
 
       results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :batman, :name])
@@ -292,5 +298,17 @@ describe ConfigLibrary::Base do
       results[1].should == [:name]
       results[2].should == [:golden_age, :batman]
     end
+  end
+
+  describe "@_make_hash_chain(key_chain)" do
+    it "should return an empty hash if passed nothing" do
+      manual_lib._make_hash_chain().should == {}
+    end
+    it "should assign a series of hashes if given a chain of them" do
+      manual_lib._make_hash_chain(:batman).should == {batman:{}}
+      manual_lib._make_hash_chain(:batman, :robin, :batgirl, :color).should == {batman:{robin:{batgirl:{color:{}}}}}
+
+    end
+
   end
 end

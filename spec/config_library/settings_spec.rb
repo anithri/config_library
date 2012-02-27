@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe ConfigLibrary::Settings do
+describe ConfigLibrary::Settings, :focus do
   subject{ConfigLibrary::Settings}
   let(:default_settings) { subject.new() }
 
@@ -68,7 +68,6 @@ describe ConfigLibrary::Settings do
 
   describe "Should have predicate methods for @assign_ok and @assign_deep_ok" do
     specify { default_settings.assign_ok?.should be_true }
-    specify { default_settings.assign_deep_ok?.should be_true }
     specify { default_settings.assign_over_any?.should be_true }
     specify { default_settings.assign_over_hash?.should be_false }
   end
@@ -77,6 +76,7 @@ describe ConfigLibrary::Settings do
     it "should should assign to the first book in sort order by default" do
       default_settings.assign_to_book_strategy.call([:first, :second, :third]).should == :first
     end
+
   end
 
 

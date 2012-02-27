@@ -3,7 +3,6 @@ module ConfigLibrary
 
     OPTION_DEFAULTS = {
       assign_ok: true,
-      assign_deep_ok: true,
       assign_over_hash: false,
       assign_over_any: true,
       search_order_strategy: :lifo,
@@ -55,10 +54,6 @@ module ConfigLibrary
 
     def assign_ok?
       @assign_ok
-    end
-
-    def assign_deep_ok?
-      @assign_deep_ok
     end
 
     def assign_over_hash?

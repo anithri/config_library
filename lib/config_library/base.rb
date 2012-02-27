@@ -34,6 +34,10 @@ module ConfigLibrary
       @book_to_assign_to = value
     end
 
+    def _assign_to_hash
+      @books[book_to_assign_to]
+    end
+
     def add_book(name, book = @settings.new_book_strategy.call)
       raise ArgumentError, "#{name} must respond to #intern" unless name.respond_to?(:intern)
       raise ArgumentError, "#{book} must be a kind of hash." unless book.kind_of?(Hash)
@@ -45,21 +49,43 @@ module ConfigLibrary
     def assign_to(*key_chain, value)
       warn "\n\nAssigning chain #{key_chain} new value #{value}"
       raise AssignmentError, "not allowed to assign values." unless @settings.assign_ok?
-
-      parent = fetch_chain(*key_chain[0,-2])
-      warn "\n\nPARENT: #{parent.inspect}"
-      if parent
-
-        existing = fetch_chain(key_chain)
-        if existing
-          raise AssignmentError, "not allowed to replace existing values by #settings.assign_over_any" unless @settings.assign_over_any?
-          raise AssignmentError, "not allowed to replace existing hash by #settings.assign_over_hash" if existing.is_a?(Hash) && ! @settings.assign_over_hash?
-        end
+      existing = fetch_chain(key_chain)
+      if existing
+        warn "existing = #{existing.inspect}"
+        warn "assign_over_hash = #{@settings.assign_over_hash?}"
+        warn "existing_hash #{existing.class}"
+        raise AssignmentError, "not allowed to replace existing values" unless @settings.assign_over_any?
+        raise AssignmentError, "not allowed to replace existing hash" if ! @settings.assign_over_hash? && existing.is_a?(Hash)
+        warn "umm"
       end
-
-
+      final_key = key_chain.pop
+      warn "\nchecking #{_assign_to_hash}"
+      deepest_hash, keys_left, keys_found = _hash_for_chain(_assign_to_hash, key_chain)
+      warn "\nassign_to #{[deepest_hash, keys_left, keys_found ].inspect}"
+      unless keys_left.empty?
+        first_key = keys_left[0]
+        warn keys_left
+        warn "1" + deepest_hash.inspect
+        deepest_hash[first_key] = _make_hash_chain(*keys_left.dup)
+        warn keys_left
+        warn "2" + deepest_hash.inspect
+        deepest_hash = _hash_for_chain(deepest_hash,*keys_left.dup)[0]
+        warn keys_left
+        warn "3" + deepest_hash.inspect
+        deepest_hash
+      end
+      warn "last one #{deepest_hash.inspect}"
+      deepest_hash[final_key] = value
     end
 
+    def _make_hash_chain(*key_chain)
+      top = @settings.new_book_strategy.call
+      this_key = key_chain.shift
+      if this_key
+        top[this_key] = _make_hash_chain(*key_chain)
+      end
+      top
+    end
 
     def add_to_search_order(key)
       raise ArgumentError, "#{key} not a valid book" unless @books.has_key?(key)
@@ -95,7 +121,9 @@ module ConfigLibrary
     def _fetch_chain_raw(key_chain)
       #payload? Perhaps I'm over paranoid, but i wasn't sure about returning literal false values
       #and this allowed me to skip that worry by wrapping whatever the return value is
-      @search_order.map{|b| _hash_deep_fetch(@books[b], key_chain.dup)}
+      a = @search_order.map{|b| _hash_deep_fetch(@books[b], key_chain.dup)}
+      #warn "\n\n" + a.inspect
+      a
     end
 
     def fetch_all_chain(*key_chain, &default)
@@ -108,7 +136,7 @@ module ConfigLibrary
 
     def books_with_key_chain(*key_chain)
       a = @search_order.select{|b| _hash_deep_fetch(@books[b], key_chain.flatten.compact)}
-      warn "#{a.inspect} has #{key_chain.flatten.compact}"
+      #warn "#{a.inspect} has #{key_chain.flatten.compact}"
       return a
     end
 
@@ -122,12 +150,13 @@ module ConfigLibrary
 
     #TODO consider rename to _deep_fetch
     def _hash_deep_fetch(target_hash, key_chain)
-      warn "_hash_deep_fetch(#{target_hash}, #{key_chain})"
+      #warn "_hash_deep_fetch(#{target_hash}, #{key_chain})"
       return nil unless target_hash.is_a?(Hash)
       key = key_chain.pop
       deep_hash, keys_left, keys_found = _hash_for_chain(target_hash, key_chain)
       return nil unless keys_left.empty?
-      return _get_value(deep_hash, key)
+      key_to_use = _check_keys(deep_hash, key)
+      return _get_value(deep_hash, key_to_use)
     end
 
     def _find_with_object(container)
@@ -138,22 +167,26 @@ module ConfigLibrary
     end
 
     def _hash_for_chain(target_hash, keys_to_find, used_keys = [])
-      warn "_hash_for_chain(#{target_hash},"
-      warn "                #{keys_to_find},"
-      warn "                #{used_keys})"
+      #warn "_hash_for_chain(#{target_hash},"
+      #warn "                #{keys_to_find},"
+      #warn "                #{used_keys})"
       return [target_hash, keys_to_find, used_keys] if keys_to_find.empty?
       #warn "  not "
-      if target_hash.has_key?(keys_to_find[0]) && target_hash[keys_to_find[0]].is_a?(Hash)
-        used_keys << keys_to_find.shift
+      key_to_use = _check_keys(target_hash,keys_to_find[0])
+      if key_to_use && target_hash[key_to_use].is_a?(Hash)
+        used_keys << key_to_use
+        keys_to_find.shift
         results = _hash_for_chain(target_hash[used_keys[-1]], keys_to_find, used_keys)
       else
         return [target_hash, keys_to_find, used_keys]
       end
     end
 
+    def _check_keys(target_hash, key_to_check)
+      @settings.alternate_key_strategy.call(key_to_check).find{|k| target_hash.has_key?(k)}
+    end
 
     def _get_value(target_hash, key)
-      warn "get_value(\n          #{target_hash.inspect},\n          #{key})"
       return nil unless target_hash.has_key?(key)
       return [:boomerang,target_hash[key]]
     end
