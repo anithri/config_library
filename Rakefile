@@ -22,6 +22,8 @@ Jeweler::Tasks.new do |gem|
   gem.email = "anithri@gmail.com"
   gem.authors = ["Scott M Parrish"]
   # dependencies defined in Gemfile
+  @my_name = gem.name
+  @my_version = gem.inspect
 end
 Jeweler::RubygemsDotOrgTasks.new
 
@@ -29,11 +31,6 @@ require 'rspec/core'
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec) do |spec|
   spec.pattern = FileList['spec/**/*_spec.rb']
-end
-
-RSpec::Core::RakeTask.new(:rcov) do |spec|
-  spec.pattern = 'spec/**/*_spec.rb'
-  spec.rcov = true
 end
 
 task :default => :spec
@@ -46,4 +43,21 @@ Rake::RDocTask.new do |rdoc|
   rdoc.title = "config_library #{version}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
+end
+
+%w(major minor patch).each do |bump|
+  Rake::Task["version:bump:#{bump}"].enhance do
+    Rake::Task["version:sync_constant"].invoke
+  end
+end
+
+namespace :version do
+  desc "Write contents of VERSION file into lib/config_file/version.rb"
+  task :sync_constant do
+    j = Jeweler::VersionHelper.new(Dir.pwd)
+    module_name = @my_name.split("_").map(&:capitalize).join("")
+    file = "module #{module_name}\n  VERSION = '#{j.to_s}'\nend\n"
+    file_name = Dir.pwd + "/lib/#{@my_name}/version.rb"
+    File.open(file_name, 'w') {|f| f.write(file)}
+  end
 end

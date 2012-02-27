@@ -30,4 +30,8 @@ describe ConfigLibrary do
         ["$this_is_a_long_test_case", nil]}
   end
 
+  it "should have a VERSION" do
+    subject::VERSION.should =~ /\d+\.\d+\.\d+(\..+)?/
+  end
+
 end

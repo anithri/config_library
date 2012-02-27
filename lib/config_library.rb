@@ -1,3 +1,4 @@
+require_relative 'config_library/version'
 require_relative 'config_library/search_order_strategies'
 require_relative 'config_library/settings'
 require_relative 'config_library/method_chain'
@@ -14,6 +15,7 @@ module ConfigLibrary
   def name_parts(sym)
     sym.to_s.match(ConfigLibrary::KEY_REGEXP).captures
   end
+
                             # working code first #
                   ####  #####  ##### # #    # # ###### ######
                  #    # #    #   #   # ##  ## #     #  #
