@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe ConfigLibrary::Settings, :focus do
+describe ConfigLibrary::Settings do
   subject{ConfigLibrary::Settings}
   let(:default_settings) { subject.new() }
 
@@ -70,14 +70,13 @@ describe ConfigLibrary::Settings, :focus do
     specify { default_settings.assign_ok?.should be_true }
     specify { default_settings.assign_over_any?.should be_true }
     specify { default_settings.assign_over_hash?.should be_false }
+    specify { default_settings.method_missing_ok?.should be_true }
+    specify { default_settings.method_missing_top_level_keys_only?.should be_true }
   end
 
   describe "@assign_to_book_strategy" do
     it "should should assign to the first book in sort order by default" do
       default_settings.assign_to_book_strategy.call([:first, :second, :third]).should == :first
     end
-
   end
-
-
 end

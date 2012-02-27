@@ -176,7 +176,31 @@ module ConfigLibrary
       MethodChain.new(self)
     end
 
+    def method_missing(name_sym, *args, &block)
+      if _name_ok_for_method_missing?(name_sym, args)
+        return MethodChain.new(self, name_sym)
+      else
+        super
+      end
+    end
 
+    def all_keys_for_key_chain(*key_chain)
+      a = fetch_all_chain(key_chain)
+      unless a.all?{|e| e.is_a?(Hash)}
+        raise ConfigLibrary::KeyError, "not all results are hashes: #{a.inspect}"
+      end
+       a.map(&:keys).flatten.compact.uniq
+    end
+
+    def _name_ok_for_method_missing?(name_sym, args)
+      return false unless args.empty?
+      return false unless @settings.method_missing_ok?
+      if @settings.method_missing_top_level_keys_only?
+        return has_key?(name_sym)
+      else
+        return true
+      end
+    end
                               # working code first #
                     ####  #####  ##### # #    # # ###### ######
                    #    # #    #   #   # ##  ## #     #  #

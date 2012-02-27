@@ -10,6 +10,7 @@ describe ConfigLibrary do
     specify {subject.constants.should include(:Settings)}
     specify {subject.constants.should include(:SearchOrderStrategies)}
     specify {subject.constants.should include(:AssignmentError)}
+    specify {subject.constants.should include(:KeyError)}
   end
 
   describe "#name_parts(sym)" do

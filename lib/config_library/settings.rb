@@ -5,6 +5,8 @@ module ConfigLibrary
       assign_ok: true,
       assign_over_hash: false,
       assign_over_any: true,
+      method_missing_ok: true,
+      method_missing_top_level_keys_only: true,
       search_order_strategy: :lifo,
       alternate_key_strategy: lambda{ |key| key.is_a?(Symbol) ? [key, key.to_s] : [key, key.intern] },
       new_book_strategy: lambda{ {} }, #empty hash
@@ -62,6 +64,14 @@ module ConfigLibrary
 
     def assign_over_any?
       @assign_over_any
+    end
+
+    def method_missing_ok?
+      @method_missing_ok
+    end
+
+    def method_missing_top_level_keys_only?
+      @method_missing_ok
     end
 
   end

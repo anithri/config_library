@@ -17,6 +17,8 @@ describe ConfigLibrary::Base do
     lib.books[:new] = {}
     lib
   }
+  let(:batman_lib) {subject.new(COMMON_BATMAN_HASH.dup)}
+  let(:assignment_error){ConfigLibrary::AssignmentError}
 
   describe "#initialize(order_strategy, initial_books)" do
     describe "should raise an ArgumentError when giving improper arguments" do
@@ -212,8 +214,6 @@ describe ConfigLibrary::Base do
   end
 
   describe "#assign_to(keychain,value)" do
-    let(:batman_lib) {subject.new(COMMON_BATMAN_HASH)}
-    let(:assignment_error){ConfigLibrary::AssignmentError}
     context "when @assign_ok is false" do
       it "should raise an AssignmentError when attempting to assign anything" do
         batman_lib.settings.assign_ok = false
@@ -310,6 +310,53 @@ describe ConfigLibrary::Base do
       manual_lib._make_hash_chain(:batman, :robin, :batgirl, :color).should == {batman:{robin:{batgirl:{color:{}}}}}
 
     end
+  end
 
+  describe "#_name_ok_for_method_missing?(name_sym, *args, &block)" do
+    context "when passed args that have any number of elements but none" do
+      it "should return false when called with any name" do
+        batman_lib._name_ok_for_method_missing?(:wonder_woman, [true]).should be_false
+        batman_lib._name_ok_for_method_missing?(:batman, [true]).should be_false
+      end
+    end
+    context "when @settings.method_missing_ok is false" do
+      it "should return false when called with any values" do
+        batman_lib.settings.method_missing_ok = false
+        batman_lib._name_ok_for_method_missing?(:wonder_woman, [true]).should be_false
+        batman_lib._name_ok_for_method_missing?(:batman, []).should be_false
+      end
+    end
+    context "when @settings.method_missing_top_level_keys_only is true" do
+      it "should return true when passed the name of an existing key at the top level of hash" do
+        batman_lib._name_ok_for_method_missing?(:batman, []).should be_true
+        batman_lib._name_ok_for_method_missing?(:green_arrow, []).should be_true
+      end
+
+      it "should return false when passed a name that is not a top level key of hash" do
+        batman_lib._name_ok_for_method_missing?(:wonder_woman, []).should be_false
+        batman_lib._name_ok_for_method_missing?(:green_lantern, []).should be_false
+      end
+    end
+  end
+
+  describe "#method_missing" do
+    it "should construct a MethodChain object" do
+      batman_lib.batman.should be_a ConfigLibrary::MethodChain
+      batman_lib.batman._key_chain.should == [:batman]
+      batman_lib.batman.villains.poison_ivy.should == "Pamela Isley"
+    end
+  end
+
+  describe "@all_keys_for_key_chain(*key_chain)" do
+    it "should return an array of all they keys provided in all books" do
+      batman_lib.all_keys_for_key_chain(:green_arrow).should =~ [:sidekicks]
+      batman_lib.all_keys_for_key_chain(:batman, :villains).should =~ [:hugo_strange, :joker, :twoface, :riddler,
+                                                                       :poison_ivy, :ras_al_ghoul]
+
+    end
+    it "should raise an Error if one or more of the keys at the key_chain are not Hash" do
+      lambda {batman_lib.all_keys_for_key_chain(:batman, :sidekicks)}.should raise_error(ConfigLibrary::KeyError,
+                                                                                         /not all results are hashes/)
+    end
   end
 end
