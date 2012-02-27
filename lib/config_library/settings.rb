@@ -4,7 +4,10 @@ module ConfigLibrary
     OPTION_DEFAULTS = {
       assign_ok: true,
       assign_deep_ok: true,
+      assign_over_hash: false,
+      assign_over_any: true,
       search_order_strategy: :lifo,
+      alternate_key_strategy: lambda{ |key| key.is_a?(Symbol) ? [key, key.to_s] : [key, key.intern] },
       new_book_strategy: lambda{ {} }, #empty hash
       assign_to_book_strategy: lambda{ |search_order| search_order.first }
     }
@@ -57,5 +60,14 @@ module ConfigLibrary
     def assign_deep_ok?
       @assign_deep_ok
     end
+
+    def assign_over_hash?
+      @assign_over_hash
+    end
+
+    def assign_over_any?
+      @assign_over_any
+    end
+
   end
 end

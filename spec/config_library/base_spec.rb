@@ -211,28 +211,38 @@ describe ConfigLibrary::Base do
     specify { fifo_lib.config.should be_a ConfigLibrary::MethodChain }
   end
 
-  describe "#assign_to(keychain,value)", :focus do
+  describe "#assign_to(keychain,value)" do
     let(:batman_lib) {subject.new(COMMON_BATMAN_HASH)}
-    context "when @create_ok is false" do
-      it "should raise an Error when attempting to assign anything" do
+    let(:assignment_error){ConfigLibrary::AssignmentError}
+    context "when @assign_ok is false" do
+      it "should raise an AssignmentError when attempting to assign anything" do
         batman_lib.settings.assign_ok = false
-        lambda{ batman_lib.assign_to(:foo, :bar, :baz)}.should raise_error StandardError, /not allowed to assign/
-        lambda{ batman_lib.assign_to(:batman, "Dick Grayson")}.should raise_error StandardError, /not allowed to assign/
-
+        lambda{ batman_lib.assign_to(:foo, :bar, :baz)}.should raise_error assignment_error, /not allowed to assign/
+        lambda{ batman_lib.assign_to(:batman, :name, "Dick Grayson")}.should raise_error assignment_error, /not allowed to assign/
       end
     end
-    context "when @create_ok is true" do
-      it "should raise NoMethodError when attempting to assign to a value that is not a hash." do
-        lambda{ batman_lib.assign_to(:batman,:name, :first, "Bruce" )}.should raise_error NoMethodError, /asdf/
-
+    context "when @assign_ok is true" do
+      context "when @assign_over_any is false" do
+        it "should raise an AssignmentError when the key_chain already exists" do
+          batman_lib.settings.assign_over_any = false
+          lambda{ batman_lib.assign_to(:batman, :name, "Dick Grayson")}.should raise_error(assignment_error, /not allowed to replace existing values/)
+        end
+      end
+      context "when @assign_over_any is true" do
+        context "when @assign_over_hash is false" do
+          it "should raise an AssignmentError when the key already exists, but is a hash" do
+            batman_lib.settings.assign_over_hash = false
+            lambda{ batman_lib.assign_to(:batman, :sidekicks, "none")}.should raise_error(assignment_error, /not allowed to replace existing hash/)
+          end
+          it "should assign a value to an existing hash"
+        end
+        context "when @assign_over_hash is true" do
+          it "should replace an existing hash with a new value"
+        end
       end
 
-      it "should assign a value to an existing hash"
-
-      it "should replace a value with an existing key"
-
       context "when @create_deep is false" do
-        it "should raise an ArgumentError when trying to assign a key into a non existent hash"
+        it "should raise an AssignmentError if parts of the key_chain do not exist"
       end
 
       context "when @create_deep is true" do
@@ -241,4 +251,46 @@ describe ConfigLibrary::Base do
     end
   end
 
+  describe "#_hash_for_chain(target_hash, keys_to_find, used_keys = [])", :focus do
+    it "return the target_hash and 2 empty arrays if passed an empty keys_to_find" do
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [])
+      results[0].should == COMMON_BATMAN_HASH
+      results[1].should == []
+      results[2].should == []
+    end
+
+    it "return the target_hash, the existing_key_chain, and an empty array if passed a keychain that starts with a non existent key" do
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:foo])
+      results[0].should == COMMON_BATMAN_HASH
+      results[1].should == [:foo]
+      results[2].should == []
+
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:foo, :bar, :baz])
+      results[0].should == COMMON_BATMAN_HASH
+      results[1].should == [:foo, :bar, :baz]
+      results[2].should == []
+    end
+
+    it "should return the first hash that does not have the next key" do
+
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :flash])
+      warn results
+      results[0].should be_a(Hash)
+      results[0][:batman][:name].should == "Bruce Wayne"
+      results[1].should == [:flash]
+      results[2].should == [:golden_age]
+
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :batman, :gadgets, :batmobile])
+      results[0].should be_a(Hash)
+      results[0][:name].should == "Bruce Wayne"
+      results[1].should == [:gadgets, :batmobile]
+      results[2].should == [:golden_age, :batman]
+
+      results = manual_lib._hash_for_chain(COMMON_BATMAN_HASH, [:golden_age, :batman, :name])
+      results[0].should be_a(Hash)
+      results[0][:name].should == "Bruce Wayne"
+      results[1].should == [:name]
+      results[2].should == [:golden_age, :batman]
+    end
+  end
 end

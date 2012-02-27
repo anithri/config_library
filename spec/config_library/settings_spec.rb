@@ -8,6 +8,7 @@ describe ConfigLibrary::Settings do
     it "should initialize to defaults when no options are present" do
       default_settings.should be_a subject
       default_settings.assign_ok.should be_true
+      default_settings.assign_over_hash.should be_false
       default_settings.new_book_strategy.call.should == {}
     end
 
@@ -35,6 +36,21 @@ describe ConfigLibrary::Settings do
     end
   end
 
+  describe "default lambdas" do
+    describe "@alternate_key_strategy" do
+      specify {default_settings.alternate_key_strategy.call(:testing).should == [:testing, "testing"]}
+      specify {default_settings.alternate_key_strategy.call("testing").should == ["testing", :testing]}
+    end
+
+    describe "@assign_to_book_strategy" do
+      specify {default_settings.assign_to_book_strategy.call([:a,:b,:c]).should == :a }
+    end
+
+    describe "@new_book_strategy" do
+      specify {default_settings.new_book_strategy.call.should == {} }
+    end
+  end
+
   describe "#is_valid_search_order_strategy(new_strategy)" do
     it "should be true for any string or symbol which is a method in ConfigLibrary::SearchOrderStrategies" do
       default_settings.is_valid_search_order_strategy?(:manual).should be_true
@@ -50,15 +66,18 @@ describe ConfigLibrary::Settings do
     end
   end
 
-  describe "Should hvae predicate methods for @assign_ok and @assign_deep_ok" do
+  describe "Should have predicate methods for @assign_ok and @assign_deep_ok" do
     specify { default_settings.assign_ok?.should be_true }
     specify { default_settings.assign_deep_ok?.should be_true }
+    specify { default_settings.assign_over_any?.should be_true }
+    specify { default_settings.assign_over_hash?.should be_false }
   end
 
   describe "@assign_to_book_strategy" do
     it "should should assign to the first book in sort order by default" do
       default_settings.assign_to_book_strategy.call([:first, :second, :third]).should == :first
     end
-
   end
+
+
 end

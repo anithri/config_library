@@ -42,20 +42,24 @@ module ConfigLibrary
       add_to_search_order(name.intern)
     end
 
-    def assign_to(*key_chain, values)
-      raise StandardError, "not allowed to assign values." unless @settings.assign_ok?
-      current_hash = books[book_to_assign_to]
-      raise StandardError, "no hash for #{book_to_assign_to}" unless current_hash.is_a?(Hash)
-      used_keys = []
-      key_chain.each do |key|
-        used_keys << key
-        if current_hash.has_key?(key) && current_hash[key].is_a?(Hash)
-          current_hash = current_hash[key]
-        elsif current_hash.has_key?(key)
-          raise ArgumentError, "key[#{key}] at end of chain[.#{used_keys.join('.')}] cannot be assigned a new element."
+    def assign_to(*key_chain, value)
+      warn "\n\nAssigning chain #{key_chain} new value #{value}"
+      raise AssignmentError, "not allowed to assign values." unless @settings.assign_ok?
+
+      parent = fetch_chain(*key_chain[0,-2])
+      warn "\n\nPARENT: #{parent.inspect}"
+      if parent
+
+        existing = fetch_chain(key_chain)
+        if existing
+          raise AssignmentError, "not allowed to replace existing values by #settings.assign_over_any" unless @settings.assign_over_any?
+          raise AssignmentError, "not allowed to replace existing hash by #settings.assign_over_hash" if existing.is_a?(Hash) && ! @settings.assign_over_hash?
         end
       end
+
+
     end
+
 
     def add_to_search_order(key)
       raise ArgumentError, "#{key} not a valid book" unless @books.has_key?(key)
@@ -103,7 +107,9 @@ module ConfigLibrary
     alias :fetch_all :fetch_all_chain
 
     def books_with_key_chain(*key_chain)
-      @search_order.select{|b| _hash_deep_fetch(@books[b], key_chain.flatten.compact)}
+      a = @search_order.select{|b| _hash_deep_fetch(@books[b], key_chain.flatten.compact)}
+      warn "#{a.inspect} has #{key_chain.flatten.compact}"
+      return a
     end
 
     alias :books_with_key :books_with_key_chain
@@ -116,17 +122,38 @@ module ConfigLibrary
 
     #TODO consider rename to _deep_fetch
     def _hash_deep_fetch(target_hash, key_chain)
+      warn "_hash_deep_fetch(#{target_hash}, #{key_chain})"
       return nil unless target_hash.is_a?(Hash)
-      this_level = key_chain.shift
-      #TODO detect and respond to cases where hash has both string and symbol key
-      alternate_key = this_level.is_a?(Symbol) ? this_level.to_s : this_level.intern
-      return_value = _get_value(target_hash, this_level) || _get_value(target_hash, alternate_key)
-      return return_value if key_chain.empty?
-      return nil if return_value.nil?
-      _hash_deep_fetch(return_value[1], key_chain)
+      key = key_chain.pop
+      deep_hash, keys_left, keys_found = _hash_for_chain(target_hash, key_chain)
+      return nil unless keys_left.empty?
+      return _get_value(deep_hash, key)
     end
 
+    def _find_with_object(container)
+      container.each do |e|
+        out = yield(e)
+        return out if out
+      end
+    end
+
+    def _hash_for_chain(target_hash, keys_to_find, used_keys = [])
+      warn "_hash_for_chain(#{target_hash},"
+      warn "                #{keys_to_find},"
+      warn "                #{used_keys})"
+      return [target_hash, keys_to_find, used_keys] if keys_to_find.empty?
+      #warn "  not "
+      if target_hash.has_key?(keys_to_find[0]) && target_hash[keys_to_find[0]].is_a?(Hash)
+        used_keys << keys_to_find.shift
+        results = _hash_for_chain(target_hash[used_keys[-1]], keys_to_find, used_keys)
+      else
+        return [target_hash, keys_to_find, used_keys]
+      end
+    end
+
+
     def _get_value(target_hash, key)
+      warn "get_value(\n          #{target_hash.inspect},\n          #{key})"
       return nil unless target_hash.has_key?(key)
       return [:boomerang,target_hash[key]]
     end
