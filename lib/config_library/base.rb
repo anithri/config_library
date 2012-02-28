@@ -3,7 +3,7 @@ module ConfigLibrary
 
     attr_reader :settings, :books, :search_order, :book_to_assign_to
 
-    def initialize(initial_books, opts = ConfigLibrary::Settings.new())
+    def initialize(initial_books = {}, opts = ConfigLibrary::Settings.new())
       unless opts.kind_of?(ConfigLibrary::Settings)
         @book_to_assign_to = opts.delete(:book_to_assign_to)
         opts = ConfigLibrary::Settings.new(opts)
