@@ -156,6 +156,7 @@ used to generate the same.
 
 ### Search Order Strategy
 There are 3 built in strategies to choose from.
+
   * :lifo
     * Last In First Out
     * new books are placed at the beginning of the search_order array
@@ -185,6 +186,7 @@ config.search_order_strategy = :random
 ```
 
 You can also just set a lambda with the same two paramaters and use it's results.
+
 ```ruby
 #this will replace the current first element with the new_one
 config.search_order_strategy = lambda {|container, new_value| container[0] = new_value; container }
