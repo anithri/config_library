@@ -7,53 +7,48 @@ module ConfigLibrary
                   "=" => :_assign_element
     }
 
-    def _key_chain
-      @key_chain
-    end
+    KEY_REGEXP = /^(.+[^!=])([#{OP_LOOKUPS.keys.join("")}])?$/o
 
-    #declaring all of these for override situations
-    def _plain_keep_going?(name, op, key_chain, value)
-      value.is_a?(Hash)
+    def name_parts(sym)
+      sym.to_s.match(KEY_REGEXP).captures
     end
 
     def initialize(library, *key_chain)
       @library = library
       @key_chain = key_chain
+      @still_possible = true
     end
 
     def method_missing(name_sym, *args, &block)
-      #warn "enter mm: #{@key_chain}"
-      name, op = ConfigLibrary.name_parts(name_sym)
-      @key_chain << name
-      #warn "\nMM: #{name} -> #{op || 'nil'} -> (#{args})?"
-      self.send(OP_LOOKUPS[op], name, op, args, block)
+      name, op = name_parts(name_sym)
+      @key_chain << name.to_sym
+      out = self.send(OP_LOOKUPS[op], name, op, args, block)
+      return out if out || @nil_result || @still_possible
+      super
     end
 
     def _plain_element(name, op, args, block)
-      #warn "  PE: #{name} -> #{op} -> (#{args})?"
-      value = library.fetch_chain(@key_chain)
-      #warn "    chain #{@key_chain.inspect} => #{value.inspect}"
-      if value.nil?
-        return ConfigLibrary::NullResult.new("ok for .#{@key_chain[0..-2].join('.')}, nil on .#{@key_chain[-1]},")
-      end
-      if _plain_keep_going?(name, op, @key_chain, value)
-        return self
-      else
-        return value
-      end
+      keys = @library.deep_keys_for(*@key_chain)
+      value = @library.fetch(*@key_chain)
+      @still_possible = ! keys.empty?
+
+      return value if value && keys.empty?
+      return nil if keys.empty?
+      return self
     end
 
     def _bang_element(name, op, args, block)
-      value = library.fetch_chain(@key_chain)
-      if value.nil?
-        return ConfigLibrary::NullResult.new("ok for .#{@key_chain[0..-2].join('.')}, nil on .#{@key_chain[-1]},")
+      out = _plain_element(name, op, args, block)
+      @still_possible = true
+      if out === self
+        return @library.fetch_hash(*@key_chain)
       else
-        return value
+        return out
       end
     end
 
     def _assign_element(name, op, args, block)
-      @library._deep_assign(@key_chain, args)
+      @library.assign_to(@key_chain, args[0])
     end
 
                 # working code first #
