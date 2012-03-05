@@ -36,6 +36,7 @@ describe ConfigLibrary::Base do
       hash = {:a => 1, :b => 2}
       default._mk_new_hash().should == {}
 
+
       result = default._mk_new_hash(hash)
       result.should have_key([:a])
       result.should have_key([:b])
@@ -52,6 +53,11 @@ describe ConfigLibrary::Base do
       result = default._mk_new_hash(COMMON_BATMAN_HASH)
       result.should have_key([:golden_age, :batman, :name])
       result.should have_key([:silver_age, :batman, :villains, :poison_ivy])
+
+      hash =  {foo: 3, bar: "High", baz: { system: "linux", user: "me"}}
+      result = default._mk_new_hash(hash)
+      warn result.inspect
+
     end
   end
 

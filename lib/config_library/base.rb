@@ -3,21 +3,34 @@ require 'facets/enumerable/hashify'
 module ConfigLibrary
   class Base
 
-    attr_reader :books, :search_order, :assign_to_book
+    attr_reader :books
+    attr_accessor :search_order, :assign_to_book
 
-    def initialize(*args)
+    # Initializes a new ConfigLibrary object.
+    #
+    # @param book_hash [Hash] A Hash<#to_sym,[Hash, nil]>  used to initialize books.
+    # @return [ConfigLibrary] the initialized object.
+    def initialize(book_hash = {})
       @books = {}
       @search_order = []
       @assign_to = nil
-      add_new_books(args) unless args.empty?
+      add_new_books(book_hash) unless book_hash.empty?
     end
 
+    # @private
+    # Creates a new hash or converts an existing hash to the flat Hash style used internally by ConfigLibrary
+    # @param old_hash [Hash] An existing Hash to be converted for ConfigLibrary
+    # @return [Hash] A flat hash using an array of symbols as a key.
     def _mk_new_hash(old_hash = nil)
       new_hash = Hash.autonew
       return new_hash if old_hash.nil?
       _parse_hash_deep(new_hash, old_hash, key_chain = [])
     end
 
+    # The symbol used in @books to determine which book should be assigned to.
+    #
+    # defaults to the first book in the search order
+    # @return [Symbol]  Name of the book to be assigned to.
     def assign_to_book
       @assign_to_book ||= search_order.first
     end
